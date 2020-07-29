@@ -1,0 +1,19 @@
+{
+  "name": "notification_service",
+  "version": "1.0.0",
+  "description": "Notification Service",
+  "main": "service.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Foodload/notification_service.git"
+  },
+  "author": "Foodload Team",
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/Foodload/notification_service/issues"
+  },
+  "homepage": "https://github.com/Foodload/notification_service#readme"
+}
