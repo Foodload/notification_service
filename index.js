@@ -52,9 +52,28 @@ sub.on('message', function (channel, data) {
 
   const messageType = data.messageType;
   if (messageType == 'update_item') {
-    io.to(data.familyId).emit('update_item', data.data);
+    io.local.to(data.familyId).emit('update_item', data.data);
   } else if (messageType == 'family_invite') {
-    io.to(data.userId).emit('family_invite', data.data);
+    io.local.to(data.userId).emit('family_invite', data.data);
+  } else if (messageType == 'change_family') {
+    io.local
+      .of('/')
+      .in(data.userId)
+      .clients((error, clients) => {
+        if (error) {
+          console.log(error);
+          return;
+        }
+        if (clients.length != 0) {
+          const socketId = clients[0];
+          const socket = io.local.sockets.connected[socketId];
+          const user = socket.user;
+          socket.leave(user.familyId);
+          user.familyId = data.familyId;
+          socket.join(user.familyId);
+          socket.emit('changed_family');
+        }
+      });
   }
 });
 
@@ -63,21 +82,6 @@ io.on('connection', function (socket) {
   const user = socket.user;
   socket.join(user.userId);
   socket.join(user.familyId);
-
-  socket.on('change_family', function (data) {
-    var decoded;
-    try {
-      decoded = jwt.verify(socket.handshake.query.token, jwtSecret);
-    } catch (error) {
-      socket.emit('error', error.message);
-      return;
-    }
-
-    socket.leave(user.familyId);
-    user.familyId = decoded.familyId;
-    socket.join(user.familyId);
-    socket.emit('changed_family');
-  });
 
   socket.on('disconnect', function (data) {
     //Nothing needed atm
