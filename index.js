@@ -4,6 +4,7 @@ const app = express();
 const server = require('http').createServer(app);
 var port = process.env.PORT || 3000;
 const io = require('socket.io')(server);
+
 const redis = require('redis');
 const redisAdapter = require('socket.io-redis');
 
@@ -16,15 +17,17 @@ const User = require('./models/User');
 const jwtSecret = process.env.JWT_SECRET;
 const redisHost = process.env.REDIS_HOST;
 const redisPort = process.env.REDIS_PORT;
-const sub = redis.createClient({ port: redisPort, host: redisHost });
+const redisPw = process.env.REDIS_PW;
 
-io.adapter(redisAdapter({ port: redisPort, host: redisHost }));
+const sub = redis.createClient({ port:redisPort, host:redisHost, auth_pass:redisPw});
+
+io.adapter(redisAdapter({ port: redisPort, host: redisHost,  auth_pass:redisPw }));
 
 server.listen(port, function () {
   console.log('Listening at %d', port);
 });
 
-// Serve simple page...
+// Serve simple page... whi?
 app.use(express.static(__dirname + '/public'));
 
 function auth(socket, next) {
@@ -43,8 +46,10 @@ sub.on('subscribe', function (channel, count) {
 });
 
 sub.on('message', function (channel, data) {
+  
   try {
     data = JSON.parse(data);
+    console.log(data);
   } catch (error) {
     console.log(error);
     return;
@@ -52,28 +57,9 @@ sub.on('message', function (channel, data) {
 
   const messageType = data.messageType;
   if (messageType == 'update_item') {
-    io.local.to(data.familyId).emit('update_item', data.data);
+    io.to(data.familyId).emit('update_item', data.data);
   } else if (messageType == 'family_invite') {
-    io.local.to(data.userId).emit('family_invite', data.data);
-  } else if (messageType == 'change_family') {
-    io.local
-      .of('/')
-      .in(data.userId)
-      .clients((error, clients) => {
-        if (error) {
-          console.log(error);
-          return;
-        }
-        if (clients.length != 0) {
-          const socketId = clients[0];
-          const socket = io.local.sockets.connected[socketId];
-          const user = socket.user;
-          socket.leave(user.familyId);
-          user.familyId = data.familyId;
-          socket.join(user.familyId);
-          socket.emit('changed_family');
-        }
-      });
+    io.to(data.userId).emit('family_invite', data.data);
   }
 });
 
@@ -83,9 +69,24 @@ io.on('connection', function (socket) {
   socket.join(user.userId);
   socket.join(user.familyId);
 
+  socket.on('change_family', function (data) {
+    var decoded;
+    try {
+      decoded = jwt.verify(socket.handshake.query.token, jwtSecret);
+    } catch (error) {
+      socket.emit('error', error.message);
+      return;
+    }
+
+    socket.leave(user.familyId);
+    user.familyId = decoded.familyId;
+    socket.join(user.familyId);
+    socket.emit('changed_family');
+  });
+
   socket.on('disconnect', function (data) {
     //Nothing needed atm
   });
 });
 
-sub.subscribe('foodload');
+sub.subscribe('PublishItem');
