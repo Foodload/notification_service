@@ -32,7 +32,8 @@ app.use(express.static(__dirname + '/public'));
 
 function auth(socket, next) {
   try {
-    const decoded = jwt.verify(socket.handshake.query.token, jwtSecret);
+    const decoded = jwt.verify(socket.handshake.query.token, Buffer.from(jwtSecret));
+    print(decoded);
     const user = new User(decoded.userId, decoded.familyId);
     socket.user = user;
     next();
@@ -72,7 +73,7 @@ io.on('connection', function (socket) {
   socket.on('change_family', function (data) {
     var decoded;
     try {
-      decoded = jwt.verify(socket.handshake.query.token, jwtSecret);
+      decoded = jwt.verify(socket.handshake.query.token, Buffer.from(jwtSecret));
     } catch (error) {
       socket.emit('error', error.message);
       return;
