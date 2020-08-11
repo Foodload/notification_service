@@ -19,9 +19,15 @@ const redisHost = process.env.REDIS_HOST;
 const redisPort = process.env.REDIS_PORT;
 const redisPw = process.env.REDIS_PW;
 
-const sub = redis.createClient({ port:redisPort, host:redisHost, auth_pass:redisPw});
+const sub = redis.createClient({
+  port: redisPort,
+  host: redisHost,
+  auth_pass: redisPw,
+});
 
-io.adapter(redisAdapter({ port: redisPort, host: redisHost,  auth_pass:redisPw }));
+io.adapter(
+  redisAdapter({ port: redisPort, host: redisHost, auth_pass: redisPw })
+);
 
 server.listen(port, function () {
   console.log('Listening at %d', port);
@@ -33,7 +39,7 @@ app.use(express.static(__dirname + '/public'));
 function auth(socket, next) {
   try {
     const decoded = jwt.verify(socket.handshake.query.token, jwtSecret);
-    const user = new User(decoded.userId, decoded.familyId);
+    const user = new User(decoded.sub, decoded.family);
     socket.user = user;
     next();
   } catch (error) {
@@ -46,7 +52,6 @@ sub.on('subscribe', function (channel, count) {
 });
 
 sub.on('message', function (channel, data) {
-  
   try {
     data = JSON.parse(data);
     console.log(data);
