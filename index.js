@@ -71,6 +71,8 @@ sub.on('message', function (channel, data) {
 io.use(auth);
 io.on('connection', function (socket) {
   const user = socket.user;
+  console.log(user.userId);
+  console.log(user.familyId);
   socket.join(user.userId);
   socket.join(user.familyId);
 
