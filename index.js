@@ -40,6 +40,7 @@ function auth(socket, next) {
   try {
     console.log(socket.handshake.query.token);
     console.log(jwtSecret);
+    console.log("jwt print: "+ Buffer.from(jwtSecret));
     const decoded = jwt.verify(socket.handshake.query.token, Buffer.from(jwtSecret));
     console.log(decoded);
     const user = new User(decoded.sub, decoded.family);
@@ -82,7 +83,7 @@ io.on('connection', function (socket) {
 
   socket.on('change_family', function (data) {
     var decoded;
-    print("jwt print: "+ Buffer.from(jwtSecret));
+  
     try {
       decoded = jwt.verify(socket.handshake.query.token, Buffer.from(jwtSecret));
     } catch (error) {
