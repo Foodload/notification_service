@@ -43,6 +43,7 @@ function auth(socket, next) {
     socket.user = user;
     next();
   } catch (error) {
+    console.log(error);
     next(new Error('Failed Authentication'));
   }
 }
