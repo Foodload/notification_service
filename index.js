@@ -82,6 +82,7 @@ io.on('connection', function (socket) {
 
   socket.on('change_family', function (data) {
     var decoded;
+    print("jwt print: "+ Buffer.from(jwtSecret));
     try {
       decoded = jwt.verify(socket.handshake.query.token, Buffer.from(jwtSecret));
     } catch (error) {
