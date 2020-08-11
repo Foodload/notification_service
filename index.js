@@ -65,8 +65,9 @@ sub.on('message', function (channel, data) {
   }
 
   const messageType = data.messageType;
+  console.log(data.messageType);
   if (messageType == 'update_item') {
-    io.to(data.familyId).emit('update_item', data.data);
+    io.to(data.familyId).emit('update_item', data);
   } else if (messageType == 'family_invite') {
     io.to(data.userId).emit('family_invite', data.data);
   }
