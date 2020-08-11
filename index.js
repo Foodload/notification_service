@@ -19,9 +19,15 @@ const redisHost = process.env.REDIS_HOST;
 const redisPort = process.env.REDIS_PORT;
 const redisPw = process.env.REDIS_PW;
 
-const sub = redis.createClient({ port:redisPort, host:redisHost, auth_pass:redisPw});
+const sub = redis.createClient({
+  port: redisPort,
+  host: redisHost,
+  auth_pass: redisPw,
+});
 
-io.adapter(redisAdapter({ port: redisPort, host: redisHost,  auth_pass:redisPw }));
+io.adapter(
+  redisAdapter({ port: redisPort, host: redisHost, auth_pass: redisPw })
+);
 
 server.listen(port, function () {
   console.log('Listening at %d', port);
@@ -32,12 +38,15 @@ app.use(express.static(__dirname + '/public'));
 
 function auth(socket, next) {
   try {
+    console.log(socket.handshake.query.token);
+    console.log(jwtSecret);
     const decoded = jwt.verify(socket.handshake.query.token, Buffer.from(jwtSecret));
-    print(decoded);
-    const user = new User(decoded.userId, decoded.familyId);
+    console.log(decoded);
+    const user = new User(decoded.sub, decoded.family);
     socket.user = user;
     next();
   } catch (error) {
+    console.log(error);
     next(new Error('Failed Authentication'));
   }
 }
@@ -47,7 +56,6 @@ sub.on('subscribe', function (channel, count) {
 });
 
 sub.on('message', function (channel, data) {
-  
   try {
     data = JSON.parse(data);
     console.log(data);
@@ -67,6 +75,8 @@ sub.on('message', function (channel, data) {
 io.use(auth);
 io.on('connection', function (socket) {
   const user = socket.user;
+  console.log(user.userId);
+  console.log(user.familyId);
   socket.join(user.userId);
   socket.join(user.familyId);
 
