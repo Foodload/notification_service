@@ -38,7 +38,8 @@ app.use(express.static(__dirname + '/public'));
 
 function auth(socket, next) {
   try {
-    console.log(socket);
+    console.log(socket.handshake.query.token);
+    console.log(jwtSecret);
     const decoded = jwt.verify(socket.handshake.query.token, jwtSecret);
     console.log(decoded);
     const user = new User(decoded.sub, decoded.family);
