@@ -33,15 +33,12 @@ server.listen(port, function () {
   console.log('Listening at %d', port);
 });
 
-// Serve simple page... whi?
+// Serve simple page
 app.use(express.static(__dirname + '/public'));
 
 function auth(socket, next) {
   try {
-    console.log(socket.handshake.query.token);
-    console.log(jwtSecret);
     const decoded = jwt.verify(socket.handshake.query.token, jwtSecret);
-    console.log(decoded);
     const user = new User(decoded.sub, decoded.family);
     socket.user = user;
     next();
@@ -55,46 +52,47 @@ sub.on('subscribe', function (channel, count) {
   console.log('Subscribed to channel: ' + channel + ', count: ' + count);
 });
 
-sub.on('message', function (channel, data) {
+sub.on('message', function (_channel, data) {
+  var parsedData;
   try {
-    data = JSON.parse(data);
-    console.log(data);
+    parsedData = JSON.parse(data);
   } catch (error) {
     console.log(error);
     return;
   }
 
-  const messageType = data.messageType;
-  console.log(data.messageType);
+  const messageType = parsedData.messageType;
   if (messageType == 'update_item') {
-    io.to(data.familyId).emit('update_item', data);
+    io.local.to(parsedData.familyId).emit('update_item', data);
   } else if (messageType == 'family_invite') {
-    io.to(data.userId).emit('family_invite', data.data);
+    io.local.to(parsedData.userId).emit('family_invite', data);
+  } else if (messageType == 'change_family') {
+    io.local
+      .of('/')
+      .in(parsedData.userId)
+      .clients((error, clients) => {
+        if (error) {
+          console.log(error);
+          return;
+        }
+        if (clients.length != 0) {
+          const socketId = clients[0];
+          const socket = io.local.sockets.connected[socketId];
+          const user = socket.user;
+          socket.leave(user.familyId);
+          user.familyId = parsedData.familyId;
+          socket.join(user.familyId);
+          socket.emit('changed_family'); //add more info?
+        }
+      });
   }
 });
 
 io.use(auth);
 io.on('connection', function (socket) {
   const user = socket.user;
-  console.log(user.userId);
-  console.log(user.familyId);
   socket.join(user.userId);
   socket.join(user.familyId);
-
-  socket.on('change_family', function (data) {
-    var decoded;
-    try {
-      decoded = jwt.verify(socket.handshake.query.token, jwtSecret);
-    } catch (error) {
-      socket.emit('error', error.message);
-      return;
-    }
-
-    socket.leave(user.familyId);
-    user.familyId = decoded.familyId;
-    socket.join(user.familyId);
-    socket.emit('changed_family');
-  });
 
   socket.on('disconnect', function (data) {
     //Nothing needed atm
