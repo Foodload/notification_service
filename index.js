@@ -96,7 +96,12 @@ io.on('connection', function (socket) {
 
   socket.on('disconnect', function (data) {
     //Nothing needed atm
+    console.log('socket.on: disconnect');
   });
+});
+io.on('disconnect', function (socket) {
+  socket.disconnect(true);
+  console.log('io.on: disconnect');
 });
 
 sub.subscribe('PublishItem');
