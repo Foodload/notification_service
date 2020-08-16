@@ -95,13 +95,8 @@ io.on('connection', function (socket) {
   socket.join(user.familyId);
 
   socket.on('disconnect', function (data) {
-    //Nothing needed atm
-    console.log('socket.on: disconnect');
+    socket.disconnect(true);
   });
-});
-io.on('disconnect', function (socket) {
-  socket.disconnect(true);
-  console.log('io.on: disconnect');
 });
 
 sub.subscribe('PublishItem');
