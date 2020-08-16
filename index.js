@@ -95,7 +95,7 @@ io.on('connection', function (socket) {
   socket.join(user.familyId);
 
   socket.on('disconnect', function (data) {
-    socket.disconnect(true);
+    console.log('disconnected');
   });
 });
 
