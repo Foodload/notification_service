@@ -68,6 +68,8 @@ sub.on('message', function (_channel, data) {
     io.local.to(parsedData.userId).emit('family_invite', data);
   } else if (messageType == 'move_item') {
     io.local.to(parsedData.familyId).emit('move_item', data);
+  } else if (messageType == 'delete_item') {
+    io.local.to(parsedData.familyId).emit('delete_item', data);
   } else if (messageType == 'change_family') {
     io.local
       .of('/')
